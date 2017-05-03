@@ -1,4 +1,7 @@
-##Daily Log
+###Daily Log
+Day 2: We started by setting up basics on our raspberry pi. By using the code "sudo raspi-config" into the console, we changed internal components like allowing ssh and setting up the correct clock, as well as setting up a new password. By applying for a Clearpass, we were able to get the pi to have its own ip address.I also had to download a program called Putty, which allowed a windows user ssh access from Putty's terminal. 
+
+We set up the ssh remote access to use on our own laptops in order to allow "headless" access once knowing the correct ip address
 
 ### Markdown
 
