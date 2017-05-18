@@ -51,7 +51,7 @@ exit 0
 # Week 2
 
 **Day 5**: Following the advice of the following link, , we connected our HX711 to our Pi. Specifically, we connected the Raspberry Pi to the HX711 using 3.3v to vcc, Raspberry Pi BCM23 to the SCK pin (The author recommended the CLK pin, but in his picture he used the SCK pin. Our version of the HX711, does not have a CLK pin. If this is a problem, we are going to order the version that does have it), BCM24 to data(DT) and ground to ground.
-
+Picture 1
 We are going to need a load combinator since there a four sensors on the scale, and one arduino can only connect to one sensor.
 
 **Day 6**: We ordered the Load combinator as well as the load amplifier hx711 (in the scenario that we may need to switch out our hx711 boards for one with a clk pin). After hooking up one of the pressure sensors to the hx711 board, we tried downloading the libraries of the hx711 as well as code that would allow us to read out signals that the pressure sensor was recieving. However, when running the python script, we were only able to get a random set of numbers displayed, with no correlation to whether or not we were pushing on the sensor. To try and solve this problem, we figured that our wiring may be incorrect, as it it appears slightly different on the various projects we have found online. This method provided no further progress.
