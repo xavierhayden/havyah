@@ -120,8 +120,9 @@ However we were met with a string of seemingly random numbers, with no correlati
 **Day 7**: Since our wiring yesterday failed to yield any results, we had the idea that it was possibly the flimsy wires to blame(we figured the code wasn't the direct problem since we werent getting actual changes in our readings). We unsoldered the wires from the chip on the scale, which would take away the LED display(bypassing the inner components of the scale altogether), but would allow us to have more freedom of movement with the wires. We then tried using a breadboard to connect the load cell sensor wires to the hx711. The problem we faced with this was again, the quality of the wires from the cells. I tried fortifying them by soldering the tips but this process was very ineffiecient as well as ineffective. This method returned to us another failure, however it did solidify the fact that we needed the use of the combinator board in order to get the correct inputs the hx711 chip needed in order to make the analog to digital conversion. 
 
 **Day 8**: So today the load combinator arrived! We carefully unsoldered the remaining wires from the chip in the scale and began the process of soldering them to the load combinator. 
+![load combinator](https://cloud.githubusercontent.com/assets/28270466/26224662/5658730e-3bf1-11e7-937f-319ff6752126.jpg)
 
-load combinator arrives We stripped the wires from the load cell sensors and soldered them directly to the load combinator
+Since many sites said that the color of the wires was in no way standard, we tried testing resistance between wires to determine which was which, in order to input them into the correct +/-/C spots in the combinator board. However,, since the voltmeter didn't seem to work too well, we decided to just go with gut feelings. We attached black to - in an educational assumption that it was the gnd wire. Then attached red to + and white to C, in a wild guess. We began soldering in the wires which proved extrememly difficult due to the quality of the wires themselves.
 
 # Week Three
 
