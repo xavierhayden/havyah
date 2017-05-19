@@ -166,9 +166,227 @@ We then connected the combinator board's A+, A-, B+, and B- to the same type on 
 
 **Day 15**: So we were wiring up the LCD screen. A problem we ran into was the fact that we needed to rearrange the gpio pins on the pi to accomadate the screen. Luckily, the only pins we had to move from the hx711 were the power and the ground. The ground was simple enough to fix since there are several ground gpio pins. However, the power was a bit trickier. We ended up doing a sort of impromptu set up where we drew power from the LCD screen in order to send it to the hx711. The end result looked like this:
 
-funky wiring tricks, downloading lcd libraries, fiddled with contrast, fiddled with code to set up a basic user selection, one that would run as the user steps off and resets for each session.
+![img_9537](https://cloud.githubusercontent.com/assets/28270466/26259601/b7aa12f6-3c97-11e7-99ec-0d2ca02362e6.JPG)
+
+We then downloaded the libraries of the LCD from the adafruit website and fiddled around with the code to create a basic user selection, that would be activated when the user steps off the scale.The LCD code portion would only work the first time a person stepped on the scale. The next time and all times after it wouldn't work. Hence, we assumed there was an error with the "while true" as the program checked to see if buttons were being pressed. We fiddled around with placing breaks at various points to no avail. Since, neither of us were too familar with "while true" loops, we decided to hand write a while loop we were more accustommed to, and it was fixed! Here is our code at the moment:
+```python
+
+import RPi.GPIO as GPIO
+import time
+import sys
+from hx711 import HX711
+import numpy as np
+import datetime
+import requests
+import Adafruit_CharLCD as LCD
+
+
+def cleanAndExit():
+    print "Cleaning..."
+    GPIO.cleanup()
+    print "Bye!"
+    sys.exit()
+mass = []
+hx = HX711(5, 6)
+
+# I've found out that, for some reason, the order of the bytes is not always the same between versions of python, numpy and the h$
+# Still need to figure out why does it change.
+# If you're experiencing super random values, change these values to MSB or LSB until to get more stable values.
+# There is some code below to debug and log the order of the bits and the bytes.
+# The first parameter is the order in which the bytes are used to build the "long" value.
+# The second paramter is the order of the bits inside each byte.
+# According to the HX711 Datasheet, the second parameter is MSB so you shouldn't need to modify it.
+hx.set_reading_format("LSB", "MSB")
+#hx.set_reading_format("MSB", "MSB")
+
+# HOW TO CALCULATE THE REFFERENCE UNIT
+# To set the reference unit to 1. Put 1kg on your sensor or anything you have and know exactly how much it weights.
+# In this case, 92 is 1 gram because, with 1 as a reference unit I got numbers near 0 without any weight
+# and I got numbers around 184000 when I added 2kg. So, according to the rule of thirds:
+# If 2000 grams is 184000 then 1000 grams is 184000 / 2000 = 92.
+#hx.set_reference_unit(113)
+hx.set_reference_unit(-12500)
+
+hx.reset()
+hx.tare()
+
+while True:
+    try:
+        # These three lines are usefull to debug wether to use MSB or LSB in the reading formats
+        # for the first parameter of "hx.set_reading_format("LSB", "MSB")".
+        # Comment the two lines "val = hx.get_weight(5)" and "print val" and uncomment the three lines to see what it prints.
+        #np_arr8_string = hx.get_np_arr8_string()
+        #binary_string = hx.get_binary_string()
+        #print binary_string + " " + np_arr8_string
+
+        # Prints the weight. Comment if you're debbuging the MSB and LSB issue.
+        val = hx.get_weight(5)
+        if val<5:
+                if(len(mass)>0):#person just stepped off
+                        url = 'https://script.google.com/macros/s/AKfycbxaflfjud9NMQfimC5EKvbgyOLFKDeUaDFoT3zduc9lev2XmgeZ/exec?weight='+ str(np.median(mass)) +'&date='+str(datetime.datetime.now())
+                        requests.get(url)
+                        print [str(datetime.datetime.now()),np.median(mass)]
+                        # Initialize the LCD using the pins
+                        lcd = LCD.Adafruit_CharLCDPlate()
+                        lcd.set_color(1.0, 0.0, 0.0)
+                        lcd.clear()
+                        lcd.message('Xavier     Ben')
+                        buttons = ( (LCD.LEFT,   'Xavier weighs'+str(np.median(mass))  , (1,0,0)),
+                                    (LCD.RIGHT,  'Ben weighs'+str(np.median(mass)) , (1,0,1)) )
+                                 # Loop through each button and check if it is pressed.
+                        while i <2:
+                                 if i=1:
+                                        if lcd.is_pressed(buttons[i][0]):
+                                                # Button is pressed, change the message and backlight.
+                                                lcd.clear()
+                                                lcd.message(buttons[i][1])
+                                                lcd.set_color(buttons[i][2][0], buttons[i][2][1], buttons[i][2][2])
+                                                time.sleep(5.0)
+                                                lcd.clear()
+                                                i=3
+                                        else: i=0
+                                if i=0:
+                                        if lcd.is_pressed(buttons[i][0]):
+                                                # Button is pressed, change the message and backlight.
+                                                lcd.clear()
+                                                lcd.message(buttons[i][1])
+                                                lcd.set_color(buttons[i][2][0], buttons[i][2][1], buttons[i][2][2])
+                                                time.sleep(5.0)
+                                                lcd.clear()
+                                                i=3
+                                        else: i=1
+                time.sleep(1)
+                mass=[]
+        else:
+                mass.append(val)
+
+
+        hx.power_down()
+        hx.power_up()
+        time.sleep(0.5)
+    except (KeyboardInterrupt, SystemExit):
+        cleanAndExit()
+
+```
+It does basically everything we want it to do at this point except 1) I haven't made a google spreadsheet yet to have my weight added to and 2) we want to find a better way to have the user select who they are. At the moment, there are just two names shown (Myself on the left and Ben on the right) and the person just hits right or left. This will only work smoothly for two people. We want to be able to arrange 4 names on the screen: one centered top, one right, one left, and one centered bottom so that the four 4 buttons can be used.
+
 
 **Day 16**: A classmate brought in her personal scale to help us correctly calibrate the reference unit for the hx711 conversion. The important thing we did here was do multiple tests with her scale. We were finding that the scale wasnt giving accurate readings until about 20 minutes into using it, which was strange. We then used basic math to deterimine the ratio between the the hx711 scale and the reference unit. Using the formula (hx711 weight)/(reference unit)=(person's true weight)/(true reference unit), we were able to get within a +/- 3lbs range of the scale. Then we continued to adjust the reference unit until we were getting almost identical readings as the store bought scale that our classmate brought. 
-    We also fiddled with the code for the LCD board. A problem we ran into was that since we were running our code (now called example2.py) in rc.local, when we would manually run it in the terminal it would be running two instances of the code and mess up the display on the LCD screen. We set up a pretty basic selection menu for who was being weighed, as well as made our own personal google spreadsheet page and implemented them into the code. 
+    We also fiddled with the code for the LCD board. A problem we ran into was that since we were running our code (now called example2.py) in rc.local, when we would manually run it in the terminal it would be running two instances of the code and mess up the display on the LCD screen. We set up a pretty basic selection menu for who was being weighed, as well as made our own personal google spreadsheet page and implemented them into the code. Here is our final code:
+    ```python
+
+import RPi.GPIO as GPIO
+import time
+import sys
+from hx711 import HX711
+import numpy as np
+import datetime
+import requests
+import Adafruit_CharLCD as LCD
+
+
+def cleanAndExit():
+    print "Cleaning..."
+    GPIO.cleanup()
+    print "Bye!"
+    sys.exit()
+mass = []
+hx = HX711(5, 6)
+
+# I've found out that, for some reason, the order of the bytes is not always the same between versions of python, numpy and the h$
+# Still need to figure out why does it change.
+# If you're experiencing super random values, change these values to MSB or LSB until to get more stable values.
+# There is some code below to debug and log the order of the bits and the bytes.
+# The first parameter is the order in which the bytes are used to build the "long" value.
+# The second paramter is the order of the bits inside each byte.
+# According to the HX711 Datasheet, the second parameter is MSB so you shouldn't need to modify it.
+hx.set_reading_format("LSB", "MSB")
+#hx.set_reading_format("MSB", "MSB")
+
+# HOW TO CALCULATE THE REFFERENCE UNIT
+# To set the reference unit to 1. Put 1kg on your sensor or anything you have and know exactly how much it weights.
+# In this case, 92 is 1 gram because, with 1 as a reference unit I got numbers near 0 without any weight
+# and I got numbers around 184000 when I added 2kg. So, according to the rule of thirds:
+# If 2000 grams is 184000 then 1000 grams is 184000 / 2000 = 92.
+#hx.set_reference_unit(113)
+hx.set_reference_unit(-12175.0)
+
+hx.reset()
+hx.tare()
+ # Initialize the LCD using the pins
+lcd = LCD.Adafruit_CharLCDPlate()
+lcd.set_color(1.0, 0.0, 0.0)
+lcd.clear()
+
+while True:
+    try:
+        # These three lines are usefull to debug wether to use MSB or LSB in the reading formats
+        # for the first parameter of "hx.set_reading_format("LSB", "MSB")".
+        # Comment the two lines "val = hx.get_weight(5)" and "print val" and uncomment the three lines to see what it prints.
+        #np_arr8_string = hx.get_np_arr8_string()
+        #binary_string = hx.get_binary_string()
+        #print binary_string + " " + np_arr8_string
+
+        # Prints the weight. Comment if you're debbuging the MSB and LSB issue.
+        val =hx.get_weight(5)
+        val = str(val)
+        val = val[0:5]
+        val = float(val)
+        if val<5:
+                if(len(mass)>0):#person just stepped off
+                        print [str(datetime.datetime.now()),np.median(mass)]
+
+                        lcd.message('Xavier     Ben')
+                        buttons = ( (LCD.LEFT,   'Weight:'+str(np.median(mass))  , (1,0,0),'https://script.google.com/macros/s/AKfycbzQ_D_fOlq1JDe7hOYTjMG5-WJ1vdbcXao_3grixn_8j0bSr76w/exec?weight='+ str(np.median(mass)) +'&date='+str(datetime.datetime.now())),
+                                    (LCD.RIGHT,  'Weight:'+str(np.median(mass)) , (1,0,1),'https://script.google.com/macros/s/AKfycbw0K53MaQljtafrPS9wbCBZ_BsdX4nkEr8m-P7BSnNqNMWxg0E/exec?weight='+ str(np.median(mass)) +'&date='+str(datetime.datetime.now())) )
+                                 # Loop through each button and check if it is pressed.
+
+                        i=0
+                        while i <2:
+                                if i==1:
+                                        if lcd.is_pressed(buttons[i][0]):
+                                                # Button is pressed, change the message and backlight and send data to spreadsheet.
+                                                lcd.clear()
+                                                lcd.message(buttons[i][1])
+                                                lcd.set_color(buttons[i][2][0], buttons[i][2][1], buttons[i][2][2])
+                                                url=buttons[1][3]
+                                                requests.get(url)
+                                                time.sleep(5.0)
+                                                lcd.clear()
+                                                i=3
+                                        else: i=0
+                                if i==0:
+                                        if lcd.is_pressed(buttons[i][0]):
+                                                # Button is pressed, change the message and backlight and send data to spreadsheet.
+                                                lcd.clear()
+                                                lcd.message(buttons[i][1])
+                                                lcd.set_color(buttons[i][2][0], buttons[i][2][1], buttons[i][2][2])
+                                                url=buttons[0][3]
+                                                requests.get(url)
+                                                time.sleep(5.0)
+                                                lcd.clear()
+                                                i=3
+                                        else: i=1
+                time.sleep(1)
+                mass=[]
+        else:
+                mass.append(val)
+
+
+        hx.power_down()
+        hx.power_up()
+        time.sleep(0.5)
+    except (KeyboardInterrupt, SystemExit):
+        cleanAndExit()
+                             
+```
+
+Here is the final physical product:
+
+![img_2414](https://cloud.githubusercontent.com/assets/28270449/26220800/1b737cfc-3be2-11e7-989b-d7b99a628fe1.JPG)
+
+And here is a few days of weight tracking for Xavier:
+
+![screen shot 2017-05-18 at 3 57 51 pm](https://cloud.githubusercontent.com/assets/28270449/26221010/ec77765a-3be2-11e7-8b76-eefd1890bf73.png)
 
 **Day 17**: We honestly did not have much to do today. What we have left is basically to improve the interface of the LCD screen in order to make it more streamline. We also began work on the final website.
