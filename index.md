@@ -273,7 +273,8 @@ It does basically everything we want it to do at this point except 1) I haven't 
 
 **Day 16**: A classmate brought in her personal scale to help us correctly calibrate the reference unit for the hx711 conversion. The important thing we did here was do multiple tests with her scale. We were finding that the scale wasnt giving accurate readings until about 20 minutes into using it, which was strange. We then used basic math to deterimine the ratio between the the hx711 scale and the reference unit. Using the formula (hx711 weight)/(reference unit)=(person's true weight)/(true reference unit), we were able to get within a +/- 3lbs range of the scale. Then we continued to adjust the reference unit until we were getting almost identical readings as the store bought scale that our classmate brought. 
     We also fiddled with the code for the LCD board. A problem we ran into was that since we were running our code (now called example2.py) in rc.local, when we would manually run it in the terminal it would be running two instances of the code and mess up the display on the LCD screen. We set up a pretty basic selection menu for who was being weighed, as well as made our own personal google spreadsheet page and implemented them into the code. Here is our final code:
-    ```python
+   
+   ```python
 
 import RPi.GPIO as GPIO
 import time
